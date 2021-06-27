@@ -2,13 +2,15 @@
 
 namespace RenokiCo\Hej\Http\Controllers;
 
-use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\Factory as Socialite;
 use RenokiCo\Hej\Concerns\HandlesSocialRequests;
-use Str;
 
 class SocialController extends Controller
 {
@@ -136,9 +138,9 @@ class SocialController extends Controller
     {
         Auth::login($model);
 
-        session()->flash('social', 'Welcome back in your account!');
+        Session::flash('social', 'Welcome back in your account!');
 
-        return redirect(route('home'));
+        return $this->redirectToAfterAuthentication($model);
     }
 
     /**
@@ -152,9 +154,9 @@ class SocialController extends Controller
     {
         $provider = ucfirst($provider);
 
-        session()->flash('social', "The authentication with {$provider} failed!");
+        Session::flash('social', "The authentication with {$provider} failed!");
 
-        return redirect(route('home'));
+        return $this->redirectToAfterProviderIsRejected($request, $provider);
     }
 
     /**
@@ -170,11 +172,11 @@ class SocialController extends Controller
     {
         $provider = ucfirst($provider);
 
-        session()->flash(
+        Session::flash(
             'social', "The E-Mail address associated with your {$provider} account is already used."
         );
 
-        return redirect(route('register'));
+        return $this->redirectToAfterDuplicateEmail($request, $provider, $providerUser);
     }
 
     /**
@@ -191,11 +193,11 @@ class SocialController extends Controller
     {
         $provider = ucfirst($provider);
 
-        session()->flash(
+        Session::flash(
             'social', "You already have a {$provider} account linked."
         );
 
-        return redirect(route('home'));
+        return $this->redirectToAfterProviderIsAlreadyLinked($request, $provider, $model);
     }
 
     /**
@@ -212,11 +214,13 @@ class SocialController extends Controller
     {
         $provider = ucfirst($provider);
 
-        session()->flash(
+        Session::flash(
             'social', "Your {$provider} account is already linked to another account."
         );
 
-        return redirect(route('home'));
+        return $this->redirectToAfterProviderAlreadyLinkedByAnotherAuthenticatable(
+            $request, $provider, $model, $providerUser
+        );
     }
 
     /**
@@ -232,9 +236,9 @@ class SocialController extends Controller
     {
         $provider = ucfirst($social->provider);
 
-        session()->flash('social', "The {$provider} account has been linked to your account.");
+        Session::flash('social', "The {$provider} account has been linked to your account.");
 
-        return redirect(route('home'));
+        return $this->redirectToAfterLink($request, $model, $social, $providerUser);
     }
 
     /**
@@ -249,9 +253,9 @@ class SocialController extends Controller
     {
         $provider = ucfirst($provider);
 
-        session()->flash('social', "The {$provider} account has been unlinked.");
+        Session::flash('social', "The {$provider} account has been unlinked.");
 
-        return redirect(route('home'));
+        return $this->redirectToAfterUnlink($request, $model, $provider);
     }
 
     /**
@@ -307,5 +311,104 @@ class SocialController extends Controller
     protected function unlinked(Request $request, $model, string $provider)
     {
         //
+    }
+
+    /**
+     * Specify the redirection route after successful authentication.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterAuthentication($model)
+    {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users know
+     * the authentication using the selected provider was rejected.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $provider
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterProviderIsRejected(Request $request, $provider)
+    {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users know
+     * the E-Mail address used with this social account is
+     * already existent as another account. This is most often
+     * occuring during registrations with Social accounts.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $provider
+     * @param  \Laravel\Socialite\AbstractUser  $providerUser
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterDuplicateEmail(Request $request, $provider, $providerUser)
+    {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users know
+     * the social account is already associated with their account.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $provider
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterProviderIsAlreadyLinked(Request $request, $provider, $model)
+    {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users know
+     * the social account is associated with another account.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $provider
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  \Laravel\Socialite\AbstractUser  $providerUser
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterProviderAlreadyLinkedByAnotherAuthenticatable(
+        Request $request, $provider, $model, $providerUser
+    ) {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users know
+     * they linked the social account.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  \Illuminate\Database\Eloquent\Model  $social
+     * @param  \Laravel\Socialite\AbstractUser  $providerUser
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterLink(Request $request, $model, $social, $providerUser)
+    {
+        return Redirect::route('home');
+    }
+
+    /**
+     * Specify the redirection route to let the users
+     * they have unlinked the social account.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  string  $provider
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectToAfterUnlink(Request $request, $model, string $provider)
+    {
+        return Redirect::route('home');
     }
 }

@@ -18,9 +18,16 @@ jobs:
 
     strategy:
       matrix:
-        php: ['7.2', '7.3', '7.4']
-        laravel: ['7.*', '8.*']
-        prefer: ['prefer-lowest', 'prefer-stable']
+        php:
+          - '7.3'
+          - '7.4'
+          - '8.0'
+        laravel:
+          - '7.*'
+          - '8.*'
+        prefer:
+          - 'prefer-lowest'
+          - 'prefer-stable'
         include:
           - laravel: '7.*'
             testbench: '5.*'
@@ -30,9 +37,16 @@ jobs:
     name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} --${{ matrix.prefer }}
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2.3.4
 
-    - uses: actions/cache@v1
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+        coverage: pcov
+
+    - uses: actions/cache@v2.1.6
       name: Cache dependencies
       with:
         path: ~/.composer/cache/files
@@ -45,7 +59,7 @@ jobs:
 
     - name: Run tests
       run: |
-        phpunit --coverage-text --coverage-clover=coverage.xml
+        vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
 
     - uses: codecov/codecov-action@v1
       with:
